@@ -1,0 +1,986 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="referrer" content="no-referrer">
+    <title>破镜重圆</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#222',
+                    },
+                    fontFamily: {
+                        sans: ['system-ui', 'sans-serif'],
+                    },
+                }
+            },
+            darkMode: 'class',
+        }
+    </script>
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .nav-scroll {
+                @apply bg-white shadow-sm dark:bg-gray-800;
+            }
+            .card-btn {
+                @apply bg-white dark:bg-gray-800 rounded-xl shadow-sm py-6 text-center transition-all duration-300 hover:-translate-y-1 hover:shadow-md;
+            }
+            .banner-arrow {
+                @apply absolute top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/60 flex items-center justify-center cursor-pointer text-primary hover:bg-white transition-all z-10;
+            }
+            .dot-active {
+                @apply bg-primary w-6;
+            }
+            .page-container {
+                @apply container mx-auto px-4 pt-28 pb-16;
+            }
+            .pagination-btn {
+                @apply px-3 py-1 rounded bg-gray-200 dark:bg-gray-700;
+            }
+            .pagination-btn.active {
+                @apply bg-blue-500 text-white;
+            }
+        }
+    </style>
+    <style>
+        html {
+            scroll-behavior: smooth;
+        }
+        body {
+            margin: 0;
+            padding: 0;
+        }
+        .banner-wrap {
+            height: calc(100vh - 0px);
+        }
+        .banner-item {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            transition: opacity 0.6s ease-in-out;
+        }
+        .banner-item.active {
+            opacity: 1;
+        }
+        .page {
+            display: none;
+        }
+        .page.active {
+            display: block;
+        }
+        .item-highlight {
+            outline: 3px solid #3b82f6;
+            outline-offset: 2px;
+        }
+        .img-preview-modal {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.85);
+            z-index: 9999;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .img-preview-modal.show {
+            display: flex;
+        }
+        .img-preview-modal img {
+            max-width: 90%;
+            max-height: 90%;
+            object-fit: contain;
+        }
+        .login-modal {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.7);
+            z-index: 10000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+        }
+        .login-modal.show {
+            display: flex;
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        .subtab-content {
+            display: none;
+        }
+        .subtab-content.active {
+            display: block;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 dark:bg-gray-900 text-gray-800 dark:text-gray-100">
+    <div id="imgPreviewModal" class="img-preview-modal">
+        <img id="previewImg" src="" alt="预览大图">
+        <span class="absolute top-4 right-4 text-white text-3xl cursor-pointer" onclick="closePreview()">×</span>
+    </div>
+    <div id="loginModal" class="login-modal">
+        <div class="bg-white dark:bg-gray-800 p-6 rounded-xl w-80 shadow-lg">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-bold">账号登录</h3>
+                <span class="text-xl cursor-pointer" onclick="closeLoginModal()">×</span>
+            </div>
+            <div class="mb-3">
+                <label class="block mb-1 text-sm">账号</label>
+                <input id="loginUser" class="w-full border dark:border-gray-600 dark:bg-gray-700 rounded p-2">
+            </div>
+            <div class="mb-3">
+                <label class="block mb-1 text-sm">密码</label>
+                <input id="loginPwd" type="password" class="w-full border dark:border-gray-600 dark:bg-gray-700 rounded p-2">
+            </div>
+            <div class="flex gap-2 mt-4">
+                <button id="doLoginBtn" class="flex-1 bg-blue-500 text-white py-2 rounded">登录</button>
+                <button id="doRegBtn" class="flex-1 bg-green-500 text-white py-2 rounded">注册</button>
+            </div>
+            <div id="loginTip" class="text-red-500 mt-2 text-sm"></div>
+        </div>
+    </div>
+    <header id="navbar" class="fixed top-0 left-0 w-full z-50 transition-all duration-300">
+        <div class="container mx-auto px-4 py-3 flex items-center justify-between">
+            <div class="flex items-center gap-2">
+                <a href="#index" class="text-xl font-bold">破镜重圆</a>
+            </div>
+            <nav class="hidden md:flex items-center gap-6 text-sm">
+                <a href="#index" class="nav-link hover:text-blue-600 transition-colors">首页</a>
+                <a href="#news" class="nav-link hover:text-blue-600 transition-colors">资讯台</a>
+                <a href="#ninja" class="nav-link hover:text-blue-600 transition-colors">忍界录</a>
+                <a href="#guide" class="nav-link hover:text-blue-600 transition-colors">攻略所</a>
+                <a href="#abyss" class="nav-link hover:text-blue-600 transition-colors">深渊</a>
+                <a href="#clanwar" class="nav-link hover:text-blue-600 transition-colors">族战</a>
+                <a href="#tongren" class="nav-link hover:text-blue-600 transition-colors">同人圈</a>
+                <a href="#audio-video" class="nav-link hover:text-blue-600 transition-colors">视听馆</a>
+                <a href="#recharge" class="nav-link hover:text-blue-600 transition-colors">充值中心</a>
+                <a href="#join" class="nav-link hover:text-blue-600 transition-colors">加入我们</a>
+            </nav>
+            <div class="flex items-center gap-3">
+                <span id="userInfo" class="text-sm hidden">
+                    <span id="userName"></span>
+                    <button id="logoutBtn" class="ml-2 text-red-500">退出</button>
+                </span>
+                <button id="loginOpenBtn" class="text-sm px-2 py-1 border rounded">登录</button>
+                <button id="themeBtn" class="text-xl">
+                    <i class="fa fa-moon-o dark:hidden"></i>
+                    <i class="fa fa-sun-o hidden dark:inline"></i>
+                </button>
+                <button id="menuBtn" class="md:hidden text-xl">
+                    <i class="fa fa-bars"></i>
+                </button>
+            </div>
+        </div>
+        <div id="mobileMenu" class="hidden md:hidden bg-white dark:bg-gray-800 shadow">
+            <div class="container mx-auto px-4 py-3 flex flex-col gap-3 text-sm">
+                <a href="#index" class="nav-link py-1">首页</a>
+                <a href="#news" class="nav-link py-1">资讯台</a>
+                <a href="#ninja" class="nav-link py-1">忍界录</a>
+                <a href="#guide" class="nav-link py-1">攻略所</a>
+                <a href="#abyss" class="nav-link py-1">深渊</a>
+                <a href="#clanwar" class="nav-link py-1">族战</a>
+                <a href="#tongren" class="nav-link py-1">同人圈</a>
+                <a href="#audio-video" class="nav-link py-1">视听馆</a>
+                <a href="#recharge" class="nav-link py-1">充值中心</a>
+                <a href="#join" class="nav-link py-1">加入我们</a>
+            </div>
+        </div>
+    </header>
+    <div id="page-index" class="page active">
+        <section class="banner-wrap relative overflow-hidden">
+            <!-- 首页轮播4张：雷姆 / 圣诞少女 / 天野阳菜 / 涂山苏苏(已更新链接) -->
+            <div class="banner-item active" style="background: url('https://zza.de5.net/i/2026/10/27/6ae0340b3a9bc.jpg') center/cover no-repeat;"></div>
+            <div class="banner-item" style="background: url('https://zza.de5.net/i/2026/10/27/6ae0340c8d8fd.jpg') center/cover no-repeat;"></div>
+            <div class="banner-item" style="background: url('https://zza.de5.net/i/2026/10/27/6ae0340d643c7.jpg') center/cover no-repeat;"></div>
+            <div class="banner-item" style="background: url('https://zza.de5.net/i/2026/10/27/6ae038b25d2c8.jpg') center/cover no-repeat;"></div>
+
+            <div class="banner-arrow left-4" id="prevBtn"><i class="fa fa-angle-left"></i></div>
+            <div class="banner-arrow right-4" id="nextBtn"><i class="fa fa-angle-right"></i></div>
+            <div class="absolute bottom-6 left-1/2 -translate-x-1/2 flex gap-2 z-10">
+                <span class="w-3 h-3 rounded-full bg-gray-400 dot-active cursor-pointer banner-dot"></span>
+                <span class="w-3 h-3 rounded-full bg-gray-400 cursor-pointer banner-dot"></span>
+                <span class="w-3 h-3 rounded-full bg-gray-400 cursor-pointer banner-dot"></span>
+                <span class="w-3 h-3 rounded-full bg-gray-400 cursor-pointer banner-dot"></span>
+            </div>
+        </section>
+        <section class="py-16 container mx-auto px-4">
+            <h2 class="text-2xl font-bold text-center mb-10">快捷入口</h2>
+            <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-5 mb-5">
+                <a href="#news" class="nav-link card-btn">资讯台</a>
+                <a href="#ninja" class="nav-link card-btn">忍界录</a>
+                <a href="#guide" class="nav-link card-btn">攻略所</a>
+                <a href="#abyss" class="nav-link card-btn">深渊</a>
+                <a href="#clanwar" class="nav-link card-btn">族战</a>
+                <a href="#tongren" class="nav-link card-btn">同人圈</a>
+            </div>
+            <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-5">
+                <a href="#audio-video" class="nav-link card-btn">视听馆</a>
+                <a href="#recharge" class="nav-link card-btn">充值中心</a>
+                <a href="#join" class="nav-link card-btn">加入我们</a>
+            </div>
+        </section>
+        <section id="news-preview" class="py-16 bg-white dark:bg-gray-800">
+            <div class="container mx-auto px-4">
+                <h2 class="text-2xl font-bold text-center mb-10">资讯台</h2>
+                <div class="grid md:grid-cols-2 gap-8">
+                    <div class="bg-gray-50 dark:bg-gray-700 p-6 rounded-xl">
+                        <h3 class="text-lg font-semibold mb-4 border-b pb-2">最新公告</h3>
+                        <ul class="space-y-4 text-sm">
+                            <li><a href="#news" class="nav-link hover:text-blue-500">版本更新维护公告</a><span class="text-gray-400 ml-2">2026-10-20</span></li>
+                            <li><a href="#news" class="nav-link hover:text-blue-500">限时活动开启预告</a><span class="text-gray-400 ml-2">2026-10-15</span></li>
+                            <li><a href="#news" class="nav-link hover:text-blue-500">赛事赛程公示</a><span class="text-gray-400 ml-2">2026-10-08</span></li>
+                        </ul>
+                    </div>
+                    <div class="bg-gray-50 dark:bg-gray-700 p-6 rounded-xl">
+                        <h3 class="text-lg font-semibold mb-4 border-b pb-2">活动资讯</h3>
+                        <ul class="space-y-4 text-sm">
+                            <li><a href="#news" class="nav-link hover:text-orange-500">新流派上线，挑战副本开放</a><span class="text-gray-400 ml-2">2026-10-22</span></li>
+                            <li><a href="#news" class="nav-link hover:text-orange-500">皮肤限时返场活动</a><span class="text-gray-400 ml-2">2026-10-21</span></li>
+                            <li><a href="#news" class="nav-link hover:text-orange-500">同人创作大赛开启</a><span class="text-gray-400 ml-2">2026-10-20</span></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+        <section id="art-preview" class="py-16 container mx-auto px-4">
+            <h2 class="text-2xl font-bold text-center mb-10">同人圈</h2>
+            <div class="mb-8">
+                <h3 class="text-lg font-semibold mb-4">精选同人作品</h3>
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                    <div class="aspect-video rounded-lg overflow-hidden shadow cursor-pointer" onclick="openPreview('https://zza.de5.net/i/2026/10/27/6ae0341dcf964.jpg')">
+                        <img src="https://zza.de5.net/i/2026/10/27/6ae0341dcf964.jpg" alt="" class="w-full h-full object-cover">
+                    </div>
+                    <div class="aspect-video rounded-lg overflow-hidden shadow cursor-pointer" onclick="openPreview('https://zza.de5.net/i/2026/10/27/6ae0341e75444.jpg')">
+                        <img src="https://zza.de5.net/i/2026/10/27/6ae0341e75444.jpg" alt="" class="w-full h-full object-cover">
+                    </div>
+                    <div class="aspect-video rounded-lg overflow-hidden shadow cursor-pointer" onclick="openPreview('https://zza.de5.net/i/2026/10/27/6ae0340dc2c88.jpg')">
+                        <img src="https://zza.de5.net/i/2026/10/27/6ae0340dc2c88.jpg" alt="" class="w-full h-full object-cover">
+                    </div>
+                    <div class="aspect-video rounded-lg overflow-hidden shadow cursor-pointer" onclick="openPreview('https://zza.de5.net/i/2026/10/27/6ae03421e9864.jpg')">
+                        <img src="https://zza.de5.net/i/2026/10/27/6ae03421e9864.jpg" alt="" class="w-full h-full object-cover">
+                    </div>
+                </div>
+            </div>
+        </section>
+        <section id="video-preview" class="py-16 bg-white dark:bg-gray-800">
+            <div class="container mx-auto px-4">
+                <h2 class="text-2xl font-bold text-center mb-10">视听馆</h2>
+                <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
+                    <div class="rounded-xl overflow-hidden shadow">
+                        <div class="aspect-video bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
+                            <i class="fa fa-play-circle text-4xl text-gray-400"></i>
+                        </div>
+                        <div class="p-3 text-sm">新版本PV</div>
+                    </div>
+                    <div class="rounded-xl overflow-hidden shadow">
+                        <div class="aspect-video bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
+                            <i class="fa fa-play-circle text-4xl text-gray-400"></i>
+                        </div>
+                        <div class="p-3 text-sm">角色动画短片</div>
+                    </div>
+                    <div class="rounded-xl overflow-hidden shadow">
+                        <div class="aspect-video bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
+                            <i class="fa fa-play-circle text-4xl text-gray-400"></i>
+                        </div>
+                        <div class="p-3 text-sm">皮肤展示视频</div>
+                    </div>
+                    <div class="rounded-xl overflow-hidden shadow">
+                        <div class="aspect-video bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
+                            <i class="fa fa-play-circle text-4xl text-gray-400"></i>
+                        </div>
+                        <div class="p-3 text-sm">游戏原声</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+        <footer class="py-10 bg-gray-900 text-gray-300 text-sm">
+            <div class="container mx-auto px-4">
+                <div class="grid md:grid-cols-1 gap-8 text-center">
+                    <div>
+                        <div class="font-bold mb-2">官方QQ群</div>
+                        <p>809221378（官方7群）<br>808417424（官方8群）</p>
+                    </div>
+                </div>
+                <div class="mt-8 pt-6 border-t border-gray-700 text-center">© 破镜重圆</div>
+            </div>
+        </footer>
+    </div>
+    <div id="page-news" class="page page-container">
+        <h2 class="text-2xl font-bold text-center mb-8">资讯台</h2>
+        <div class="flex gap-4 justify-center mb-6 flex-wrap">
+            <button data-tab="latest" class="tab-btn px-4 py-2 rounded bg-blue-500 text-white">最新</button>
+            <button data-tab="notice" class="tab-btn px-4 py-2 rounded bg-gray-200 dark:bg-gray-700">公告</button>
+            <button data-tab="activity" class="tab-btn px-4 py-2 rounded bg-gray-200 dark:bg-gray-700">活动</button>
+            <button data-tab="match" class="tab-btn px-4 py-2 rounded bg-gray-200 dark:bg-gray-700">赛事</button>
+        </div>
+        <div id="tab-latest" class="tab-content active">
+            <div id="news-list-latest" class="space-y-4"></div>
+        </div>
+        <div id="tab-notice" class="tab-content">
+            <div id="news-list-notice" class="space-y-4"></div>
+        </div>
+        <div id="tab-activity" class="tab-content">
+            <div id="news-list-activity" class="space-y-4"></div>
+        </div>
+        <div id="tab-match" class="tab-content">
+            <div id="news-list-match" class="space-y-4"></div>
+        </div>
+        <div class="mt-8 bg-white dark:bg-gray-800 p-4 rounded-xl shadow mb-4">
+            <h3 class="font-semibold mb-2">新增资讯</h3>
+            <select id="news-type" class="w-full border dark:border-gray-600 dark:bg-gray-700 rounded p-2 mb-2">
+                <option value="latest">最新</option>
+                <option value="notice">公告</option>
+                <option value="activity">活动</option>
+                <option value="match">赛事</option>
+            </select>
+            <input id="news-title" placeholder="标题" class="w-full border dark:border-gray-600 dark:bg-gray-700 rounded p-2 mb-2">
+            <textarea id="news-content" placeholder="内容" class="w-full border dark:border-gray-600 dark:bg-gray-700 rounded p-2 mb-2"></textarea>
+            <button id="addNewsBtn" class="px-4 py-2 bg-blue-500 text-white rounded">提交</button>
+        </div>
+        <div class="text-center mt-4"><a href="#index" class="nav-link text-blue-500">← 返回首页</a></div>
+    </div>
+    <div id="page-ninja" class="page page-container">
+        <h2 class="text-2xl font-bold text-center mb-8">忍界录</h2>
+        <div class="flex gap-4 justify-center mb-6 flex-wrap">
+            <button data-tab="fight" class="tab-btn px-4 py-2 rounded bg-blue-500 text-white">作战忍者</button>
+            <button data-tab="support" class="tab-btn px-4 py-2 rounded bg-gray-200 dark:bg-gray-700">支援忍者</button>
+        </div>
+        <div id="tab-fight" class="tab-content active">
+            <div class="flex gap-6 flex-wrap justify-center">
+                <div class="flex flex-col gap-3">
+                    <div class="ninja-avatar w-16 h-16 rounded-full bg-gray-200 dark:bg-gray-700 cursor-pointer active border-2 border-blue-500" data-ninja="xiaohei"></div>
+                    <div class="ninja-avatar w-16 h-16 rounded-full bg-gray-200 dark:bg-gray-700 cursor-pointer" data-ninja="xiaojiao"></div>
+                </div>
+                <div class="bg-white dark:bg-gray-800 p-6 rounded-xl shadow max-w-md">
+                    <h3 id="ninja-name" class="text-xl font-bold mb-2">小黑</h3>
+                    <p id="ninja-story" class="mb-3">小黑自小成长于忍村，立志成为一名伟大的忍者。但幼时的小黑曾因体内的巨大能量而经历了一段黑暗的时光，幸得长老的教导和隼白等伙伴的帮助才使得小黑走出阴影，成长为现在这个乐观开朗的少年。</p>
+                    <p id="ninja-info">生日：12月5日（16岁，射手座）<br>身高：168CM<br>个性：有神秘感，乐观而平易近人。</p>
+                </div>
+            </div>
+        </div>
+        <div id="tab-support" class="tab-content">
+            <div class="flex gap-6 flex-wrap justify-center">
+                <div class="flex flex-col gap-3">
+                    <div class="ninja-avatar w-16 h-16 rounded-full bg-gray-200 dark:bg-gray-700 cursor-pointer active border-2 border-blue-500" data-ninja="yilong"></div>
+                    <div class="ninja-avatar w-16 h-16 rounded-full bg-gray-200 dark:bg-gray-700 cursor-pointer" data-ninja="youyou"></div>
+                </div>
+                <div class="bg-white dark:bg-gray-800 p-6 rounded-xl shadow max-w-md">
+                    <h3 id="support-ninja-name" class="text-xl font-bold mb-2">伊鹤</h3>
+                    <p id="support-ninja-story" class="mb-3">鹤之国的公主，背负着家族使命，冷静强大，身法飘逸。</p>
+                    <p id="support-ninja-info">生日：7月19日<br>身高：165CM<br>个性：冷静内敛，外冷内热。</p>
+                </div>
+            </div>
+        </div>
+        <div class="text-center mt-8"><a href="#index" class="nav-link text-blue-500">← 返回首页</a></div>
+    </div>
+    <div id="page-guide" class="page page-container">
+        <h2 class="text-2xl font-bold text-center mb-8">攻略所</h2>
+        <div class="flex gap-4 justify-center mb-6 flex-wrap">
+            <button data-tab="wallpaper" class="tab-btn px-4 py-2 rounded bg-blue-500 text-white">原画壁纸</button>
+            <button data-tab="video" class="tab-btn px-4 py-2 rounded bg-gray-200 dark:bg-gray-700">视频中心</button>
+            <button data-tab="bgm" class="tab-btn px-4 py-2 rounded bg-gray-200 dark:bg-gray-700">游戏原声</button>
+        </div>
+        <div id="tab-wallpaper" class="tab-content active">
+            <div class="grid sm:grid-cols-3 md:grid-cols-4 gap-4" id="wallpaper-list"></div>
+            <div class="flex justify-center gap-2 mt-4" id="wallpaper-pagination"></div>
+            <div class="mt-8 bg-white dark:bg-gray-800 p-4 rounded-xl shadow mb-4">
+                <h3 class="font-semibold mb-2">上传壁纸（图床：zza.de5.net）</h3>
+                <input type="file" id="wallpaper-file" accept="image/*" class="w-full border dark:border-gray-600 dark:bg-gray-700 rounded p-2 mb-2">
+                <div id="wallpaper-upload-tip" class="text-sm mb-2"></div>
+                <button id="uploadWallBtn" class="px-4 py-2 bg-blue-500 text-white rounded">上传图片</button>
+            </div>
+        </div>
+        <div id="tab-video" class="tab-content">
+            <div class="flex gap-4 justify-center mb-4 flex-wrap">
+                <button data-subtab="cg" class="subtab-btn px-3 py-1 rounded bg-blue-500 text-white">动画短片</button>
+                <button data-subtab="game" class="subtab-btn px-3 py-1 rounded bg-gray-200 dark:bg-gray-700">游戏视频</button>
+                <button data-subtab="skin" class="subtab-btn px-3 py-1 rounded bg-gray-200 dark:bg-gray-700">皮肤武器</button>
+                <button data-subtab="other" class="subtab-btn px-3 py-1 rounded bg-gray-200 dark:bg-gray-700">其他</button>
+            </div>
+            <div id="sub-cg" class="subtab-content active">
+                <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-4" id="video-list-cg"></div>
+                <div class="flex justify-center gap-2 mt-4" id="video-cg-pagination"></div>
+            </div>
+            <div id="sub-game" class="subtab-content">
+                <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-4" id="video-list-game"></div>
+                <div class="flex justify-center gap-2 mt-4" id="video-game-pagination"></div>
+            </div>
+            <div id="sub-skin" class="subtab-content">
+                <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-4" id="video-list-skin"></div>
+                <div class="flex justify-center gap-2 mt-4" id="video-skin-pagination"></div>
+            </div>
+            <div id="sub-other" class="subtab-content">
+                <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-4" id="video-list-other"></div>
+                <div class="flex justify-center gap-2 mt-4" id="video-other-pagination"></div>
+            </div>
+            <div class="mt-8 bg-white dark:bg-gray-800 p-4 rounded-xl shadow mb-4">
+                <h3 class="font-semibold mb-2">新增视频</h3>
+                <select id="video-subtype" class="w-full border dark:border-gray-600 dark:bg-gray-700 rounded p-2 mb-2">
+                    <option value="cg">动画短片</option>
+                    <option value="game">游戏视频</option>
+                    <option value="skin">皮肤武器</option>
+                    <option value="other">其他</option>
+                </select>
+                <input id="video-name" placeholder="视频标题" class="w-full border dark:border-gray-600 dark:bg-gray-700 rounded p-2 mb-2">
+                <input id="video-src" placeholder="iframe地址" class="w-full border dark:border-gray-600 dark:bg-gray-700 rounded p-2 mb-2">
+                <button id="addVideoBtn" class="px-4 py-2 bg-blue-500 text-white rounded">添加</button>
+            </div>
+        </div>
+        <div id="tab-bgm" class="tab-content">
+            <p class="text-center">游戏原声列表</p>
+        </div>
+        <div class="text-center mt-4"><a href="#index" class="nav-link text-blue-500">← 返回首页</a></div>
+    </div>
+    <div id="page-abyss" class="page page-container">
+        <h2 class="text-2xl font-bold text-center mb-8">深渊</h2>
+        <div class="flex gap-4 justify-center mb-6 flex-wrap">
+            <button data-tab="guide" class="tab-btn px-4 py-2 rounded bg-blue-500 text-white">攻略</button>
+            <button data-tab="rank" class="tab-btn px-4 py-2 rounded bg-gray-200 dark:bg-gray-700">排行榜</button>
+            <button data-tab="record" class="tab-btn px-4 py-2 rounded bg-gray-200 dark:bg-gray-700">战绩记录</button>
+            <button data-tab="skill" class="tab-btn px-4 py-2 rounded bg-gray-200 dark:bg-gray-700">配置/卡牌</button>
+        </div>
+        <div id="tab-guide" class="tab-content active">
+            <div id="abyss-list-guide" class="space-y-4"></div>
+        </div>
+        <div id="tab-rank" class="tab-content">
+            <div id="abyss-list-rank" class="space-y-4"></div>
+        </div>
+        <div id="tab-record" class="tab-content">
+            <div id="abyss-list-record" class="space-y-4"></div>
+        </div>
+        <div id="tab-skill" class="tab-content">
+            <div id="abyss-list-skill" class="space-y-4"></div>
+        </div>
+        <div class="mt-8 bg-white dark:bg-gray-800 p-4 rounded-xl shadow mb-4">
+            <h3 class="font-semibold mb-2">新增深渊内容</h3>
+            <select id="abyss-type" class="w-full border dark:border-gray-600 dark:bg-gray-700 rounded p-2 mb-2">
+                <option value="guide">攻略</option>
+                <option value="rank">排行榜</option>
+                <option value="record">战绩记录</option>
+                <option value="skill">配置/卡牌</option>
+            </select>
+            <input id="abyss-title" placeholder="标题" class="w-full border dark:border-gray-600 dark:bg-gray-700 rounded p-2 mb-2">
+            <textarea id="abyss-content" placeholder="内容" class="w-full border dark:border-gray-600 dark:bg-gray-700 rounded p-2 mb-2"></textarea>
+            <button id="addAbyssBtn" class="px-4 py-2 bg-blue-500 text-white rounded">提交</button>
+        </div>
+        <div class="text-center mt-4"><a href="#index" class="nav-link text-blue-500">← 返回首页</a></div>
+    </div>
+    <div id="page-clanwar" class="page page-container">
+        <h2 class="text-2xl font-bold text-center mb-8">族战</h2>
+        <div class="flex gap-4 justify-center mb-6 flex-wrap">
+            <button data-tab="guide" class="tab-btn px-4 py-2 rounded bg-blue-500 text-white">攻略</button>
+            <button data-tab="match" class="tab-btn px-4 py-2 rounded bg-gray-200 dark:bg-gray-700">赛程</button>
+            <button data-tab="rank" class="tab-btn px-4 py-2 rounded bg-gray-200 dark:bg-gray-700">排行榜</button>
+            <button data-tab="team" class="tab-btn px-4 py-2 rounded bg-gray-200 dark:bg-gray-700">队伍配置</button>
+        </div>
+        <div id="tab-guide" class="tab-content active">
+            <div id="clanwar-list-guide" class="space-y-4"></div>
+        </div>
+        <div id="tab-match" class="tab-content">
+            <div id="clanwar-list-match" class="space-y-4"></div>
+        </div>
+        <div id="tab-rank" class="tab-content">
+            <div id="clanwar-list-rank" class="space-y-4"></div>
+        </div>
+        <div id="tab-team" class="tab-content">
+            <div id="clanwar-list-team" class="space-y-4"></div>
+        </div>
+        <div class="mt-8 bg-white dark:bg-gray-800 p-4 rounded-xl shadow mb-4">
+            <h3 class="font-semibold mb-2">新增族战内容</h3>
+            <select id="clanwar-type" class="w-full border dark:border-gray-600 dark:bg-gray-700 rounded p-2 mb-2">
+                <option value="guide">攻略</option>
+                <option value="match">赛程</option>
+                <option value="rank">排行榜</option>
+                <option value="team">队伍配置</option>
+            </select>
+            <input id="clanwar-title" placeholder="标题" class="w-full border dark:border-gray-600 dark:bg-gray-700 rounded p-2 mb-2">
+            <textarea id="clanwar-content" placeholder="内容" class="w-full border dark:border-gray-600 dark:bg-gray-700 rounded p-2 mb-2"></textarea>
+            <button id="addClanwarBtn" class="px-4 py-2 bg-blue-500 text-white rounded">提交</button>
+        </div>
+        <div class="text-center mt-4"><a href="#index" class="nav-link text-blue-500">← 返回首页</a></div>
+    </div>
+    <div id="page-tongren" class="page page-container">
+        <h2 class="text-2xl font-bold text-center mb-8">同人圈</h2>
+        <div class="flex justify-center items-center gap-3 mb-6 flex-wrap">
+            <input id="tongren-search" placeholder="搜索你喜欢的" class="border dark:border-gray-600 dark:bg-gray-700 rounded p-2">
+            <button id="searchTongrenBtn" class="px-3 py-2 bg-blue-500 text-white rounded">搜索</button>
+            <button class="px-3 py-2 bg-orange-500 text-white rounded">我要投稿</button>
+        </div>
+        <div class="flex gap-4 justify-center mb-4 flex-wrap">
+            <button data-tab="all" class="tab-btn px-4 py-2 rounded bg-blue-500 text-white">全部</button>
+            <button data-tab="ill" class="tab-btn px-4 py-2 rounded bg-gray-200 dark:bg-gray-700">同人插画</button>
+            <button data-tab="cos" class="tab-btn px-4 py-2 rounded bg-gray-200 dark:bg-gray-700">COSPLAY</button>
+            <button data-tab="text" class="tab-btn px-4 py-2 rounded bg-gray-200 dark:bg-gray-700">同人文</button>
+            <button data-tab="emoji" class="tab-btn px-4 py-2 rounded bg-gray-200 dark:bg-gray-700">表情包</button>
+            <button data-tab="act" class="tab-btn px-4 py-2 rounded bg-gray-200 dark:bg-gray-700">活动</button>
+        </div>
+        <div class="flex gap-4 justify-center mb-6">
+            <button data-sort="hot" class="sort-btn px-4 py-2 rounded bg-blue-500 text-white">最热</button>
+            <button data-sort="new" class="sort-btn px-4 py-2 rounded bg-gray-200 dark:bg-gray-700">最新</button>
+        </div>
+        <div id="tab-all" class="tab-content active">
+            <div class="grid sm:grid-cols-3 md:grid-cols-4 gap-4" id="tongren-list-all"></div>
+            <div class="flex justify-center gap-2 mt-4" id="tongren-pagination-all"></div>
+        </div>
+        <div id="tab-ill" class="tab-content">
+            <div class="grid sm:grid-cols-3 md:grid-cols-4 gap-4" id="tongren-list-ill"></div>
+            <div class="flex justify-center gap-2 mt-4" id="tongren-pagination-ill"></div>
+        </div>
+        <div id="tab-cos" class="tab-content">
+            <div class="grid sm:grid-cols-3 md:grid-cols-4 gap-4" id="tongren-list-cos"></div>
+            <div class="flex justify-center gap-2 mt-4" id="tongren-pagination-cos"></div>
+        </div>
+        <div id="tab-text" class="tab-content">
+            <div class="grid sm:grid-cols-3 md:grid-cols-4 gap-4" id="tongren-list-text"></div>
+            <div class="flex justify-center gap-2 mt-4" id="tongren-pagination-text"></div>
+        </div>
+        <div id="tab-emoji" class="tab-content">
+            <div class="grid sm:grid-cols-3 md:grid-cols-4 gap-4" id="tongren-list-emoji"></div>
+            <div class="flex justify-center gap-2 mt-4" id="tongren-pagination-emoji"></div>
+        </div>
+        <div id="tab-act" class="tab-content">
+            <div class="grid sm:grid-cols-3 md:grid-cols-4 gap-4" id="tongren-list-act"></div>
+            <div class="flex justify-center gap-2 mt-4" id="tongren-pagination-act"></div>
+        </div>
+        <div class="mt-8 bg-white dark:bg-gray-800 p-4 rounded-xl shadow mb-4">
+            <h3 class="font-semibold mb-2">上传同人作品（图床：zza.de5.net）</h3>
+            <select id="tongren-type" class="w-full border dark:border-gray-600 dark:bg-gray-700 rounded p-2 mb-2">
+                <option value="all">全部</option>
+                <option value="ill">同人插画</option>
+                <option value="cos">COSPLAY</option>
+                <option value="text">同人文</option>
+                <option value="emoji">表情包</option>
+                <option value="act">活动</option>
+            </select>
+            <input id="tongren-tag" placeholder="标签 #xxx" class="w-full border dark:border-gray-600 dark:bg-gray-700 rounded p-2 mb-2">
+            <input type="file" id="tongren-file" accept="image/*" class="w-full border dark:border-gray-600 dark:bg-gray-700 rounded p-2 mb-2">
+            <div id="tongren-upload-tip" class="text-sm mb-2"></div>
+            <input id="tongren-like" placeholder="点赞数" class="w-full border dark:border-gray-600 dark:bg-gray-700 rounded p-2 mb-2">
+            <button id="uploadTongrenBtn" class="px-4 py-2 bg-blue-500 text-white rounded">上传作品</button>
+        </div>
+        <div class="text-center mt-4"><a href="#index" class="nav-link text-blue-500">← 返回首页</a></div>
+    </div>
+    <div id="page-audio-video" class="page page-container">
+        <h2 class="text-2xl font-bold text-center mb-8">视听馆</h2>
+        <div class="flex gap-4 justify-center mb-6 flex-wrap">
+            <button data-tab="wallpaper" class="tab-btn av-tab px-4 py-2 rounded bg-blue-500 text-white">原画壁纸</button>
+            <button data-tab="video" class="tab-btn av-tab px-4 py-2 rounded bg-gray-200 dark:bg-gray-700">视频中心</button>
+            <button data-tab="bgm" class="tab-btn av-tab px-4 py-2 rounded bg-gray-200 dark:bg-gray-700">游戏原声</button>
+        </div>
+        <div id="av-tab-wallpaper" class="tab-content active">
+            <div class="grid sm:grid-cols-3 md:grid-cols-4 gap-4" id="av-wallpaper-list"></div>
+        </div>
+        <div id="av-tab-video" class="tab-content">
+            <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-4" id="av-video-list"></div>
+        </div>
+        <div id="av-tab-bgm" class="tab-content">
+            <p class="text-center">游戏原声，点击前往攻略所原声板块</p>
+        </div>
+        <div class="text-center mt-8"><a href="#index" class="nav-link text-blue-500">← 返回首页</a></div>
+    </div>
+    <div id="page-recharge" class="page page-container">
+        <h2 class="text-2xl font-bold text-center mb-8">充值中心</h2>
+        <div class="bg-white dark:bg-gray-800 p-6 rounded-xl shadow max-w-lg mx-auto">
+            <p class="text-center">官方充值入口，本页面仅做展示</p>
+        </div>
+        <div class="text-center mt-8"><a href="#index" class="nav-link text-blue-500">← 返回首页</a></div>
+    </div>
+    <div id="page-join" class="page page-container">
+        <h2 class="text-2xl font-bold text-center mb-8">加入我们</h2>
+        <div class="bg-white dark:bg-gray-800 p-6 rounded-xl shadow max-w-lg mx-auto">
+            <p class="text-center">小白工作室招聘页面</p>
+        </div>
+        <div class="text-center mt-8"><a href="#index" class="nav-link text-blue-500">← 返回首页</a></div>
+    </div>
+    <script>
+        function openPreview(src) {
+            const modal = document.getElementById('imgPreviewModal');
+            const img = document.getElementById('previewImg');
+            img.src = src;
+            modal.classList.add('show');
+        }
+        function closePreview() {
+            const modal = document.getElementById('imgPreviewModal');
+            modal.classList.remove('show');
+        }
+        document.getElementById('imgPreviewModal').onclick = function(e) {
+            if (e.target === this) closePreview();
+        }
+        const loginModal = document.getElementById('loginModal');
+        const loginOpenBtn = document.getElementById('loginOpenBtn');
+        const userInfoWrap = document.getElementById('userInfo');
+        const userNameDom = document.getElementById('userName');
+        const logoutBtn = document.getElementById('logoutBtn');
+        const loginTip = document.getElementById('loginTip');
+        function openLoginModal() {
+            loginModal.classList.add('show');
+            loginTip.innerText = '';
+        }
+        function closeLoginModal() {
+            loginModal.classList.remove('show');
+        }
+        loginOpenBtn.onclick = openLoginModal;
+        loginModal.onclick = function(e) {
+            if (e.target === loginModal) closeLoginModal();
+        }
+        function initAccountStorage() {
+            if (!localStorage.getItem('userList')) localStorage.setItem('userList', JSON.stringify([]));
+            if (!localStorage.getItem('currentUser')) localStorage.setItem('currentUser', '');
+        }
+        initAccountStorage();
+        function refreshUserUI() {
+            const curr = localStorage.getItem('currentUser');
+            if (curr) {
+                loginOpenBtn.classList.add('hidden');
+                userInfoWrap.classList.remove('hidden');
+                userNameDom.innerText = curr;
+            } else {
+                loginOpenBtn.classList.remove('hidden');
+                userInfoWrap.classList.add('hidden');
+            }
+        }
+        refreshUserUI();
+        document.getElementById('doLoginBtn').onclick = function() {
+            const u = document.getElementById('loginUser').value.trim();
+            const p = document.getElementById('loginPwd').value.trim();
+            if (!u || !p) {
+                loginTip.innerText = '账号密码不能为空';
+                return;
+            }
+            const list = JSON.parse(localStorage.getItem('userList'));
+            const find = list.find(x => x.user === u && x.pwd === p);
+            if (!find) {
+                loginTip.innerText = '账号或密码错误';
+                return;
+            }
+            localStorage.setItem('currentUser', u);
+            refreshUserUI();
+            closeLoginModal();
+        }
+        document.getElementById('doRegBtn').onclick = function() {
+            const u = document.getElementById('loginUser').value.trim();
+            const p = document.getElementById('loginPwd').value.trim();
+            if (!u || !p) {
+                loginTip.innerText = '账号密码不能为空';
+                return;
+            }
+            const list = JSON.parse(localStorage.getItem('userList'));
+            if (list.find(x => x.user === u)) {
+                loginTip.innerText = '账号已存在';
+                return;
+            }
+            list.push({ user: u, pwd: p });
+            localStorage.setItem('userList', JSON.stringify(list));
+            loginTip.innerText = '注册成功，请登录';
+        }
+        logoutBtn.onclick = function() {
+            localStorage.removeItem('currentUser');
+            refreshUserUI();
+        }
+        const UPLOAD_API = "https://zza.de5.net/api/upload";
+        async function uploadImage(file) {
+            const fd = new FormData();
+            fd.append('file', file);
+            const res = await fetch(UPLOAD_API, { method: "POST", body: fd });
+            const json = await res.json();
+            if (json.code === 200 || json.success) {
+                return json.data.url || json.url;
+            } else {
+                throw new Error(json.msg || "上传失败");
+            }
+        }
+        const PAGE_SIZE = 12;
+        let pageState = {
+            wallpaper: 1,
+            tongren: { all: 1, ill: 1, cos: 1, text: 1, emoji: 1, act: 1 },
+            video: { cg: 1, game: 1, skin: 1, other: 1 }
+        }
+        function renderPagination(containerId, total, current, cb) {
+            const wrap = document.getElementById(containerId);
+            wrap.innerHTML = '';
+            const totalPage = Math.ceil(total / PAGE_SIZE);
+            if (totalPage <= 1) return;
+            for (let i = 1; i <= totalPage; i++) {
+                const btn = document.createElement('button');
+                btn.className = 'pagination-btn ' + (i === current ? 'active' : '');
+                btn.innerText = i;
+                btn.onclick = () => {
+                    cb(i);
+                }
+                wrap.appendChild(btn);
+            }
+        }
+        function initStorage() {
+            if (!localStorage.getItem('newsData')) localStorage.setItem('newsData', JSON.stringify({ latest: [], notice: [], activity: [], match: [] }));
+            if (!localStorage.getItem('wallpaperData')) localStorage.setItem('wallpaperData', JSON.stringify([]));
+            if (!localStorage.getItem('videoData')) localStorage.setItem('videoData', JSON.stringify({ cg: [], game: [], skin: [], other: [] }));
+            if (!localStorage.getItem('tongrenData')) localStorage.setItem('tongrenData', JSON.stringify({ all: [], ill: [], cos: [], text: [], emoji: [], act: [] }));
+            if (!localStorage.getItem('abyssData')) localStorage.setItem('abyssData', JSON.stringify({ guide: [], rank: [], record: [], skill: [] }));
+            if (!localStorage.getItem('clanwarData')) localStorage.setItem('clanwarData', JSON.stringify({ guide: [], match: [], rank: [], team: [] }));
+        }
+        initStorage();
+        function renderAbyss() {
+            const data = JSON.parse(localStorage.getItem('abyssData'));
+            for(let key in data) {
+                const dom = document.getElementById(`abyss-list-${key}`);
+                dom.innerHTML = '';
+                data[key].forEach(item=>{
+                    dom.innerHTML += `<div class="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg"><div class="font-semibold">${item.title}</div><div class="text-sm mt-2">${item.content}</div></div>`
+                })
+            }
+        }
+        function renderClanwar() {
+            const data = JSON.parse(localStorage.getItem('clanwarData'));
+            for(let key in data) {
+                const dom = document.getElementById(`clanwar-list-${key}`);
+                dom.innerHTML = '';
+                data[key].forEach(item=>{
+                    dom.innerHTML += `<div class="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg"><div class="font-semibold">${item.title}</div><div class="text-sm mt-2">${item.content}</div></div>`
+                })
+            }
+        }
+        renderAbyss();
+        renderClanwar();
+        document.getElementById('addAbyssBtn').onclick = function(){
+            const type = document.getElementById('abyss-type').value;
+            const title = document.getElementById('abyss-title').value.trim();
+            const content = document.getElementById('abyss-content').value.trim();
+            if(!title || !content){alert("标题和内容不能为空");return;}
+            const data = JSON.parse(localStorage.getItem('abyssData'));
+            data[type].push({title,content,time:Date.now()});
+            localStorage.setItem('abyssData',JSON.stringify(data));
+            renderAbyss();
+            document.getElementById('abyss-title').value='';
+            document.getElementById('abyss-content').value='';
+        }
+        document.getElementById('addClanwarBtn').onclick = function(){
+            const type = document.getElementById('clanwar-type').value;
+            const title = document.getElementById('clanwar-title').value.trim();
+            const content = document.getElementById('clanwar-content').value.trim();
+            if(!title || !content){alert("标题和内容不能为空");return;}
+            const data = JSON.parse(localStorage.getItem('clanwarData'));
+            data[type].push({title,content,time:Date.now()});
+            localStorage.setItem('clanwarData',JSON.stringify(data));
+            renderClanwar();
+            document.getElementById('clanwar-title').value='';
+            document.getElementById('clanwar-content').value='';
+        }
+        const ninjaData = {
+            xiaohei: { name: "小黑", story: "小黑自小成长于忍村，立志成为一名伟大的忍者。但幼时的小黑曾因体内的巨大能量而经历了一段黑暗的时光，幸得长老的教导和隼白等伙伴的帮助才使得小黑走出阴影，成长为现在这个乐观开朗的少年。", info: "生日：12月5日（16岁，射手座）<br>身高：168CM<br>个性：有神秘感，乐观而平易近人。" },
+            xiaojiao: { name: "小椒", story: "来自炎之国的少女，性格热烈直爽，热爱辣椒，拥有强大的火焰力量。", info: "生日：8月10日<br>身高：162CM<br>个性：热情冲动，重情义。" }
+        }
+        const supportNinjaData = {
+            yilong: { name: "伊鹤", story: "鹤之国的公主，背负着家族使命，冷静强大，身法飘逸。", info: "生日：7月19日<br>身高：165CM<br>个性：冷静内敛，外冷内热。" },
+            youyou: { name: "悠悠", story: "来自雪之国的少女，擅长治愈与辅助，性格温柔善良。", info: "生日：1月12日<br>身高：158CM<br>个性：温柔体贴，细心。" }
+        }
+        document.querySelectorAll('.ninja-avatar').forEach(av => {
+            av.onclick = function() {
+                const parentTab = this.closest('.tab-content');
+                parentTab.querySelectorAll('.ninja-avatar').forEach(i => i.classList.remove('active', 'border-2', 'border-blue-500'));
+                this.classList.add('active', 'border-2', 'border-blue-500');
+                const k = this.dataset.ninja;
+                if (parentTab.id === 'tab-fight') {
+                    const d = ninjaData[k];
+                    document.getElementById('ninja-name').innerText = d.name;
+                    document.getElementById('ninja-story').innerText = d.story;
+                    document.getElementById('ninja-info').innerHTML = d.info;
+                } else {
+                    const d = supportNinjaData[k];
+                    document.getElementById('support-ninja-name').innerText = d.name;
+                    document.getElementById('support-ninja-story').innerText = d.story;
+                    document.getElementById('support-ninja-info').innerHTML = d.info;
+                }
+            }
+        })
+        const navbar = document.getElementById('navbar');
+        window.addEventListener('scroll', () => {
+            if (window.scrollY > 50) navbar.classList.add('nav-scroll');
+            else navbar.classList.remove('nav-scroll');
+        })
+        const menuBtn = document.getElementById('menuBtn');
+        const mobileMenu = document.getElementById('mobileMenu');
+        menuBtn.onclick = () => mobileMenu.classList.toggle('hidden');
+        const themeBtn = document.getElementById('themeBtn');
+        function loadTheme() {
+            const save = localStorage.getItem('theme');
+            if (save === 'dark') document.documentElement.classList.add('dark');
+        }
+        loadTheme();
+        themeBtn.onclick = () => {
+            document.documentElement.classList.toggle('dark');
+            if (document.documentElement.classList.contains('dark')) {
+                localStorage.setItem('theme', 'dark');
+            } else {
+                localStorage.setItem('theme', 'light');
+            }
+        }
+        let bannerTimer = null;
+        function stopBanner() {
+            clearInterval(bannerTimer);
+            bannerTimer = null;
+        }
+        function startBanner() {
+            if (bannerTimer) return;
+            stopBanner();
+            const bannerItems = document.querySelectorAll('.banner-item');
+            const dots = document.querySelectorAll('.banner-dot');
+            const prevBtn = document.getElementById('prevBtn');
+            const nextBtn = document.getElementById('nextBtn');
+            let index = 0;
+            function show(i) {
+                bannerItems.forEach(el => el.classList.remove('active'));
+                dots.forEach(el => el.classList.remove('dot-active'));
+                bannerItems[i].classList.add('active');
+                dots[i].classList.add('dot-active');
+                index = i;
+            }
+            function next() {
+                let newIdx = index + 1 >= bannerItems.length ? 0 : index + 1;
+                show(newIdx);
+            }
+            function prev() {
+                let newIdx = index - 1 < 0 ? bannerItems.length - 1 : index - 1;
+                show(newIdx);
+            }
+            prevBtn.onclick = prev;
+            nextBtn.onclick = next;
+            dots.forEach((dot, i) => dot.onclick = () => show(i));
+            bannerTimer = setInterval(next, 4000);
+        }
+        let lastHash = "";
+        function switchPage(hash) {
+            hash = hash || location.hash;
+            if (hash === "") hash = "#index";
+            if (hash === lastHash) return;
+            lastHash = hash;
+            stopBanner();
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+            const targetPageId = 'page-' + hash.replace('#', '');
+            const targetPage = document.getElementById(targetPageId);
+            if (targetPage) {
+                targetPage.classList.add('active');
+            }
+            if (hash === '#index') {
+                startBanner();
+            }
+            window.scrollTo(0, 0);
+        }
+        window.addEventListener('hashchange', () => {
+            switchPage(location.hash);
+        })
+        document.querySelectorAll('.nav-link').forEach(link => {
+            link.addEventListener('click', function(e) {
+                const targetHash = this.getAttribute('href');
+                if (mobileMenu && !mobileMenu.classList.contains('hidden')) {
+                    mobileMenu.classList.add('hidden');
+                }
+                setTimeout(() => {
+                    switchPage(targetHash);
+                }, 0);
+            })
+        })
+        switchPage(location.hash);
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.onclick = function() {
+                const tabWrap = this.parentElement;
+                const tabKey = this.dataset.tab;
+                tabWrap.querySelectorAll('.tab-btn').forEach(b => {
+                    b.classList.remove('bg-blue-500', 'text-white');
+                    b.classList.add('bg-gray-200', 'dark:bg-gray-700');
+                })
+                this.classList.remove('bg-gray-200', 'dark:bg-gray-700');
+                this.classList.add('bg-blue-500', 'text-white');
+                tabWrap.parentElement.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                document.getElementById('tab-' + tabKey).classList.add('active');
+            }
+        })
+        document.querySelectorAll('.av-tab').forEach(btn => {
+            btn.onclick = function() {
+                const tabWrap = this.parentElement;
+                const tabKey = this.dataset.tab;
+                tabWrap.querySelectorAll('.av-tab').forEach(b => {
+                    b.classList.remove('bg-blue-500', 'text-white');
+                    b.classList.add('bg-gray-200', 'dark:bg-gray-700');
+                })
+                this.classList.remove('bg-gray-200', 'dark:bg-gray-700');
+                this.classList.add('bg-blue-500', 'text-white');
+                tabWrap.parentElement.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                document.getElementById('av-tab-' + tabKey).classList.add('active');
+            }
+        })
+        document.querySelectorAll('.subtab-btn').forEach(btn => {
+            btn.onclick = function() {
+                const key = this.dataset.subtab;
+                const parent = this.parentElement;
+                parent.querySelectorAll('.subtab-btn').forEach(b => {
+                    b.classList.remove('bg-blue-500', 'text-white');
+                    b.classList.add('bg-gray-200', 'dark:bg-gray-700');
+                })
+                this.classList.remove('bg-gray-200', 'dark:bg-gray-700');
+                this.classList.add('bg-blue-500', 'text-white');
+                this.closest('.tab-content').querySelectorAll('.subtab-content').forEach(s => s.classList.remove('active'));
+                document.getElementById('sub-' + key).classList.add('active');
+            }
+        })
+        document.querySelectorAll('.sort-btn').forEach(btn => {
+            btn.onclick = function() {
+                const parent = this.parentElement;
+                parent.querySelectorAll('.sort-btn').forEach(b => {
+                    b.classList.remove('bg-blue-500', 'text-white');
+                    b.classList.add('bg-gray-200', 'dark:bg-gray-700');
+                })
+                this.classList.remove('bg-gray-200', 'dark:bg-gray-700');
+                this.classList.add('bg-blue-500', 'text-white');
+            }
+        })
+        document.getElementById('uploadWallBtn').onclick = async () => {
+            const file = document.getElementById('wallpaper-file').files[0];
+            if (!file) {
+                document.getElementById('wallpaper-upload-tip').innerText = "请选择图片";
+                return;
+            }
+            document.getElementById('wallpaper-upload-tip').innerText = "上传中...";
+            try {
+                const url = await uploadImage(file);
+                const arr = JSON.parse(localStorage.getItem('wallpaperData'));
+                arr.push({ url, time: Date.now() });
+                localStorage.setItem('wallpaperData', JSON.stringify(arr));
+                document.getElementById('wallpaper-upload-tip').innerText = "上传成功：" + url;
+            } catch (e) {
+                document.getElementById('wallpaper-upload-tip').innerText = "上传失败：" + e.message;
+            }
+        }
+        document.getElementById('uploadTongrenBtn').onclick = async () => {
+            const file = document.getElementById('tongren-file').files[0];
+            const type = document.getElementById('tongren-type').value;
+            const tag = document.getElementById('tongren-tag').value;
+            const like = Number(document.getElementById('tongren-like').value) || 0;
+            if (!file) {
+                document.getElementById('tongren-upload-tip').innerText = "请选择图片";
+                return;
+            }
+            document.getElementById('tongren-upload-tip').innerText = "上传中...";
+            try {
+                const url = await uploadImage(file);
+                const data = JSON.parse(localStorage.getItem('tongrenData'));
+                const obj = { url, tag, like, time: Date.now() };
+                data[type].push(obj);
+                if (type !== 'all') data.all.push(obj);
+                localStorage.setItem('tongrenData', JSON.stringify(data));
+                document.getElementById('tongren-upload-tip').innerText = "上传成功：" + url;
+            } catch (e) {
+                document.getElementById('tongren-upload-tip').innerText = "上传失败：" + e.message;
+            }
+        }
+    </script>
+</body>
+</html>
